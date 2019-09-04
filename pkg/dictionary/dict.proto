@@ -8,22 +8,14 @@ service Dictionary {
     rpc CheckWord(Word) returns (Availability);
     rpc AddWord(Word) returns (Nothing);
     rpc RemoveWord(Word) returns (Nothing);
-    
-    rpc GetWordsWithBeginLetter(Letter) returns (stream Word);
 }
   
-  
-
   message Availability {
     bool status = 1;
   }
   
   message Word {
     string title = 1;
-  }
-
-  message Letter {
-      string symbol = 1;
   }
 
   message Nothing {
