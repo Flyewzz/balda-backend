@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -45,6 +47,7 @@ func main() {
 
 	// game = NewGame(viper.GetUint("game.countRoom"))
 
+	rand.Seed(time.Now().UnixNano())
 	port := "8080"
 
 	game = NewGame(1000)

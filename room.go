@@ -1,12 +1,15 @@
 package main
 
 import (
+	"errors"
 	"log"
+	"math/rand"
 	"sync"
 )
 
 type Room struct {
 	FieldSize  int32
+	turn       string
 	Players    map[string]*Player
 	register   chan *Player
 	unregister chan *Player
@@ -34,19 +37,31 @@ func (room *Room) AddPlayer(player *Player) {
 }
 
 func (room *Room) RemovePlayer(player *Player) {
-	room.unregister <- player
-}
-
-func RemovePlayer(player *Player) {
-
 	if player.room == nil {
 		log.Printf("Player '%s' is not in any rooms\n", player.Nickname)
 		return
 	}
 	log.Printf("Removing player '%s'...\n", player.Nickname)
-	// player.messagesClose <- struct{}{}
-	player.room.unregister <- player
+	room.unregister <- player
 	log.Printf("Player '%s' was removed!\n", player.Nickname)
+}
+
+func (r *Room) GetRandomTurn() (string, error) {
+	if len(r.Players) == 0 {
+		return "", errors.New("The room is empty")
+	}
+	var nicknames []string
+
+	for nick := range r.Players {
+		nicknames = append(nicknames, nick)
+	}
+
+	return nicknames[rand.Intn(len(nicknames))], nil
+
+}
+
+func (r *Room) SetTurn(nickname string) {
+	r.turn = nickname
 }
 
 func (room *Room) Run() {
@@ -100,6 +115,7 @@ func (room *Room) Run() {
 	}
 }
 
+//******** Room start/finish control *******
 func (r *Room) Activate() {
 	r.isStarted = true
 	for _, p := range r.Players {
@@ -112,4 +128,10 @@ func (r *Room) Deactivate() {
 	for _, p := range r.Players {
 		p.connection.Close()
 	}
+}
+
+//*******************************************
+
+func (r *Room) StartGame() {
+
 }
