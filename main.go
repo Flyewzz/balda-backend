@@ -3,11 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/websocket"
-	"github.com/spf13/viper"
 )
 
 var upgrader = websocket.Upgrader{} // use default options
@@ -22,7 +20,7 @@ func echo(w http.ResponseWriter, r *http.Request) {
 		log.Print("upgrade:", err)
 		return
 	}
-	defer connection.Close()
+	// defer connection.Close()
 	// Create a new player and give him a new connection
 	player := newPlayer(strconv.Itoa(nickCounter), connection)
 	nickCounter++
@@ -33,30 +31,25 @@ func echo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	game.AddPlayer(player)
-
-	for {
-		_, message, err := connection.ReadMessage()
-		if err != nil {
-			log.Println("read:", err)
-			break
-		}
-		log.Printf("recv: %s", message)
-	}
 }
 
 func main() {
 
-	viper.SetConfigFile(os.Args[1])
-	if err := viper.ReadInConfig(); err != nil {
-		log.Println("Cannot read config", err)
-		return
-	}
-	port := viper.GetString("game.port")
-	// hostAuth := viper.GetString("authsrv.host") + ":" + viper.GetString("authsrv.port")
+	// viper.SetConfigFile(os.Args[1])
+	// if err := viper.ReadInConfig(); err != nil {
+	// 	log.Println("Cannot read config", err)
+	// 	return
+	// }
+	// port := viper.GetString("game.port")
+	// // hostAuth := viper.GetString("authsrv.host") + ":" + viper.GetString("authsrv.port")
 
+	// game = NewGame(viper.GetUint("game.countRoom"))
+
+	port := "8080"
+
+	game = NewGame(1000)
 	http.HandleFunc("/ws", echo)
 
-	game = NewGame(viper.GetUint("game.countRoom"))
 	go game.Run()
 	http.ListenAndServe(":"+port, nil)
 }

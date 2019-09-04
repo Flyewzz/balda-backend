@@ -60,16 +60,14 @@ func (room *Room) Run() {
 		case <-room.finish:
 			for _, player := range room.Players {
 				SendDataToPlayer(player, []byte("Game was finished!"))
-				room.RemovePlayer(player)
 			}
+			room.Deactivate()
+			log.Println("Game was finished!")
 		case <-room.init:
 			// TODO Initial game
 			if !room.isStarted {
-				go func() {
-
-					<-room.finish
-				}()
-				room.isStarted = true
+				room.Activate()
+				log.Println("Game was started")
 			} else {
 				log.Println("Room is already started")
 			}
@@ -87,16 +85,31 @@ func (room *Room) Run() {
 				room.mtx.Unlock()
 				room.init <- struct{}{}
 			}
-		default:
-			continue
 		case player := <-room.unregister:
 			room.mtx.Lock()
 			delete(room.Players, player.Nickname)
+			player.room = nil
+			player.DisconnectPlayer()
+			room.mtx.Unlock()
 			if room.isStarted {
 				room.finish <- struct{}{}
 			}
-			player.room = nil
-			room.mtx.Unlock()
+		default:
+			continue
 		}
+	}
+}
+
+func (r *Room) Activate() {
+	r.isStarted = true
+	for _, p := range r.Players {
+		go p.Listen()
+	}
+}
+
+func (r *Room) Deactivate() {
+	r.isStarted = false
+	for _, p := range r.Players {
+		p.connection.Close()
 	}
 }
