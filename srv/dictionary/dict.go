@@ -1,4 +1,4 @@
-package dictionary
+package main
 
 import (
 	"context"
@@ -13,8 +13,15 @@ import (
 
 type DictionaryManager struct{}
 
+func newDictionaryManager() *DictionaryManager {
+	return &DictionaryManager{}
+}
+
 func (dm *DictionaryManager) CheckWord(ctx context.Context, word *dict.Word) (*dict.Availability, error) {
-	return &dict.Availability{}, nil
+	log.Printf("Got a word '%s'\n", word.GetTitle())
+	return &dict.Availability{
+		Status: false,
+	}, nil
 }
 
 func (dm *DictionaryManager) AddWord(ctx context.Context, word *dict.Word) (*dict.Nothing, error) {
@@ -37,6 +44,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	server := grpc.NewServer()
-	dict.RegisterDictionaryServer(server, &DictionaryManager{})
-
+	dict.RegisterDictionaryServer(server, newDictionaryManager())
+	log.Println("Dictionary microservice is listening...")
+	server.Serve(lis)
 }

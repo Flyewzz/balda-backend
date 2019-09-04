@@ -1,19 +1,25 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
 
+	dict "github.com/Flyewzz/balda-backend/pkg/dictionary"
 	"github.com/gorilla/websocket"
+	"google.golang.org/grpc"
 )
 
 var upgrader = websocket.Upgrader{} // use default options
 var game *Game
 
 var nickCounter int = 0
+
+var Dict *dict.DictionaryClient
 
 func echo(w http.ResponseWriter, r *http.Request) {
 	connection, err := upgrader.Upgrade(w, r, nil)
@@ -53,6 +59,25 @@ func main() {
 	game = NewGame(1000)
 	http.HandleFunc("/ws", echo)
 
+	conn, err := grpc.Dial(
+		"127.0.0.1:8090",
+		grpc.WithInsecure(),
+	)
+	if err != nil {
+		log.Fatalln("Cannot connect to gRPC Dictionary server!")
+	}
+
+	defer conn.Close()
+
+	DictManager := dict.NewDictionaryClient(conn)
+	result, _ := DictManager.CheckWord(context.Background(), &dict.Word{
+		Title: "слово",
+	})
+	if result.Status {
+		fmt.Println("Слово есть в базе!")
+	} else {
+		fmt.Println("Слова нет в базе!")
+	}
 	go game.Run()
 	http.ListenAndServe(":"+port, nil)
 }
